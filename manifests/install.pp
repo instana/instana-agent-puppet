@@ -22,74 +22,75 @@
 #
 
 class instana_agent::install {
-  $pkg_src   = "https://_:${$instana_agent::instana_agent_key}@packages.instana.io/agent"
-  $family    = downcase($facts['os']['family'])
+  if ($instana_agent::instana_agent_manage_repro) {
+    $pkg_src = "https://_:${$instana_agent::instana_agent_key}@packages.instana.io/agent"
+    $family = downcase($facts['os']['family'])
 
-  if ($family == 'debian') {
+    if ($family == 'debian') {
 
-    package { 'apt-transport-https':
-      ensure   => 'installed',
-      provider => 'apt',
-    }
+      package { 'apt-transport-https':
+        ensure   => 'installed',
+        provider => 'apt',
+      }
 
-    include ::apt
+      include ::apt
 
-    apt::key { 'puppetlabs':
-      ensure => 'present',
-      id     => 'B878152E2F084D46F878FA20BED2D0969BAD82DE',
-      source => 'https://packages.instana.io/Instana.gpg',
-    }
+      apt::key { 'puppetlabs':
+        ensure => 'present',
+        id     => 'B878152E2F084D46F878FA20BED2D0969BAD82DE',
+        source => 'https://packages.instana.io/Instana.gpg',
+      }
 
-    apt::source { 'instana-agent':
-      ensure       => 'present',
-      architecture => 'amd64',
-      include      => {
-        'src' => false,
-        'deb' => true,
-      },
-      location     => $pkg_src,
-      release      => 'generic',
-      repos        => 'main',
-      require      => Package['apt-transport-https']
-    }
-    Apt::Source['instana-agent']
+      apt::source { 'instana-agent':
+        ensure       => 'present',
+        architecture => 'amd64',
+        include      => {
+          'src' => false,
+          'deb' => true,
+        },
+        location     => $pkg_src,
+        release      => 'generic',
+        repos        => 'main',
+        require      => Package['apt-transport-https']
+      }
+      Apt::Source['instana-agent']
       ~> Package["instana-agent-${$instana_agent::instana_agent_flavor}"]
-  }
-
-  if ($family == 'suse') {
-    exec { 'import gpg key':
-      command => '/bin/rpm --import https://packages.instana.io/Instana.gpg',
-      unless  => '/bin/rpm -q gpg-pubkey | grep gpg-pubkey-9bad82de-574bdebd ',
     }
 
-    zypprepo { 'Instana-Agent':
-      baseurl  => "${$pkg_src}/generic/x86_64",
-      enabled  => 1,
-      name     => 'Instana-Agent',
-      gpgkey   => 'https://packages.instana.io/Instana.gpg',
-      gpgcheck => 1,
-      type     => 'rpm-md',
-      require  => Exec['import gpg key'],
-    }
-    Zypprepo['Instana-Agent']
+    if ($family == 'suse') {
+      exec { 'import gpg key':
+        command => '/bin/rpm --import https://packages.instana.io/Instana.gpg',
+        unless  => '/bin/rpm -q gpg-pubkey | grep gpg-pubkey-9bad82de-574bdebd ',
+      }
+
+      zypprepo { 'Instana-Agent':
+        baseurl  => "${$pkg_src}/generic/x86_64",
+        enabled  => 1,
+        name     => 'Instana-Agent',
+        gpgkey   => 'https://packages.instana.io/Instana.gpg',
+        gpgcheck => 1,
+        type     => 'rpm-md',
+        require  => Exec['import gpg key'],
+      }
+      Zypprepo['Instana-Agent']
       ~> Package["instana-agent-${$instana_agent::instana_agent_flavor}"]
-  }
-
-  if ($family == 'redhat') {
-    yumrepo { 'Instana-Agent':
-      ensure        => 'present',
-      assumeyes     => true,
-      baseurl       => "${$pkg_src}/generic/x86_64",
-      enabled       => true,
-      gpgkey        => 'https://packages.instana.io/Instana.gpg',
-      gpgcheck      => true,
-      repo_gpgcheck => true,
-      sslverify     => true,
     }
-    Yumrepo['Instana-Agent']
-      ~> Package["instana-agent-${$instana_agent::instana_agent_flavor}"]
-  }
 
+    if ($family == 'redhat') {
+      yumrepo { 'Instana-Agent':
+        ensure        => 'present',
+        assumeyes     => true,
+        baseurl       => "${$pkg_src}/generic/x86_64",
+        enabled       => true,
+        gpgkey        => 'https://packages.instana.io/Instana.gpg',
+        gpgcheck      => true,
+        repo_gpgcheck => true,
+        sslverify     => true,
+      }
+      Yumrepo['Instana-Agent']
+      ~> Package["instana-agent-${$instana_agent::instana_agent_flavor}"]
+    }
+  }
   package { "instana-agent-${$instana_agent::instana_agent_flavor}":
     ensure => installed,
   }

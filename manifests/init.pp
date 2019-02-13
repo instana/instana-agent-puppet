@@ -50,6 +50,7 @@ class instana_agent(
   String        $instana_agent_mirror_auth_password = '',
   String        $instana_agent_mirror_urls_release  = '',
   String        $instana_agent_mirror_urls_shared   = '',
+  Boolean       $instana_agent_manage_repro         = true,
 ) {
 
   if ($instana_agent_key == '') {
