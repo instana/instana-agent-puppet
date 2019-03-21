@@ -74,5 +74,6 @@ class instana_agent(
 
   service { 'instana-agent':
     ensure  => 'running',
+    enable  => 'true'
   }
 }
